@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cổng Thông Tin Tra Cứu Điểm Giữa Kì I - Môn Toán</title>
+    <!-- Tải Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tải Google Fonts: Be Vietnam Pro & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Tải Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Be Vietnam Pro', 'Inter', sans-serif;
+            background-color: #f4f7fb;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(79, 70, 229, 0.08) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(14, 165, 233, 0.08) 0px, transparent 50%);
+            background-attachment: fixed;
+        }
+
+        /* Hiệu ứng Glassmorphism nhẹ */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        /* Hiệu ứng xuất hiện mượt mà */
+        @keyframes slideUpFade {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .animate-card {
+            animation: slideUpFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Định dạng khi in hoặc lưu PDF phiếu điểm */
+        @media print {
+            body {
+                background: #ffffff !important;
+            }
+            header, footer, #searchSection, .no-print {
+                display: none !important;
+            }
+            main {
+                padding: 0 !important;
+                max-width: 100% !important;
+            }
+            .print-card {
+                box-shadow: none !important;
+                border: 2px solid #cbd5e1 !important;
+                break-inside: avoid;
+            }
+        }
+
+        /* Tùy chỉnh thanh cuộn */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col text-slate-800 selection:bg-indigo-100 selection:text-indigo-900">
+
+    <!-- Thông báo nổi (Toast Notification) -->
+    <div id="toastNotification" class="fixed bottom-5 right-5 z-50 hidden transform transition-all duration-300 translate-y-4 opacity-0">
+        <div class="bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl border border-slate-700/80 flex items-center gap-2.5 text-sm font-medium">
+            <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 shrink-0"></i>
+            <span id="toastMessage">Đã sao chép thông tin!</span>
+        </div>
+    </div>
+
+    <!-- Header trang nhã -->
+    <header class="glass-panel border-b border-slate-200/80 sticky top-0 z-30 shadow-xs">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 py-3.5 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-3.5">
+                <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-600 to-blue-600 text-white flex items-center justify-center shadow-md shadow-indigo-200 shrink-0">
+                    <i data-lucide="sigma" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-base sm:text-lg text-slate-900 leading-snug tracking-tight">
+                        Cổng Thông Tin Tra Cứu Điểm Giữa Kì I
+                    </h1>
+                    <div class="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500 mt-0.5">
+                        <span class="font-medium text-indigo-600">Môn Toán • Cấp THCS</span>
+                        <span class="hidden sm:inline">•</span>
+                        <span>Dành cho Phụ huynh Học sinh</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nút Quản trị dành cho Giáo viên -->
+            <button 
+                type="button"
+                onclick="openTeacherModal()" 
+                class="no-print inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-700 hover:text-indigo-700 bg-slate-100/90 hover:bg-indigo-50 rounded-xl transition-all border border-slate-200/80 hover:border-indigo-200 shrink-0"
+                title="Dành cho Giáo viên cập nhật dữ liệu từ Excel"
+            >
+                <i data-lucide="settings-2" class="w-4 h-4"></i>
+                <span class="hidden sm:inline">Cập nhật dữ liệu (GV)</span>
+                <span class="sm:hidden">GV</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Nội dung chính -->
+    <main class="flex-grow max-w-3xl w-full mx-auto px-4 sm:px-6 py-7 sm:py-11">
+        
+        <!-- Khu vực Tra cứu Trung tâm -->
+        <section id="searchSection" class="glass-panel rounded-3xl shadow-sm border border-slate-200/90 p-6 sm:p-9 mb-8">
+            <div class="text-center max-w-xl mx-auto mb-6">
+                <!-- Các lớp đang mở tra cứu (Không hiển thị danh sách hay SĐT học sinh) -->
+                <div class="inline-flex flex-wrap items-center justify-center gap-1.5 mb-3">
+                    <span class="text-xs font-medium text-slate-500 mr-1">Các lớp đang mở tra cứu:</span>
+                    <span id="activeClassesBadges" class="inline-flex flex-wrap items-center gap-1.5">
+                        <!-- Render động từ dữ liệu -->
+                    </span>
+                </div>
+
+                <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight mb-2.5">
+                    Tra Cứu Kết Quả Học Tập
+                </h2>
+                <p class="text-sm sm:text-base text-slate-600 leading-relaxed">
+                    Kính mời Quý phụ huynh nhập <strong>số điện thoại đã đăng ký</strong> để xem điểm kiểm tra Giữa kì I môn Toán, thứ hạng và nhận xét chi tiết của con.
+                </p>
+            </div>
+
+            <!-- Form nhập số điện thoại -->
+            <form id="searchForm" onsubmit="handleSearch(event)" class="max-w-lg mx-auto">
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <div class="relative flex-grow">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+                            <i data-lucide="smartphone" class="w-5 h-5"></i>
+                        </div>
+                        <input 
+                            type="tel" 
+                            id="phoneInput" 
+                            placeholder="Ví dụ: 0912345678" 
+                            class="w-full pl-11 pr-10 py-3.5 bg-slate-50/90 border border-slate-300 text-slate-900 text-base font-medium rounded-2xl focus:ring-4 focus:ring-indigo-500/15 focus:border-indigo-600 focus:bg-white transition-all outline-none"
+                            autocomplete="tel"
+                            inputmode="tel"
+                        >
+                        <!-- Nút xóa nhanh khi đang gõ -->
+                        <button 
+                            type="button" 
+                            id="clearBtn"
+                            onclick="clearInput()" 
+                            class="hidden absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+                            aria-label="Xóa số điện thoại"
+                        >
+                            <i data-lucide="x-circle" class="w-5 h-5"></i>
+                        </button>
+                    </div>
+                    <button 
+                        type="submit" 
+                        class="px-6 py-3.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 active:scale-[0.99] text-white font-semibold rounded-2xl shadow-md shadow-indigo-200 transition-all flex items-center justify-center gap-2 shrink-0"
+                    >
+                        <i data-lucide="search" class="w-5 h-5"></i>
+                        <span>Tra cứu kết quả</span>
+                    </button>
+                </div>
+
+                <!-- Ghi chú bảo mật & cách thử mẫu -->
+                <div class="mt-4 flex items-center justify-between gap-2 text-xs text-slate-500 px-1">
+                    <span class="flex items-center gap-1.5">
+                        <i data-lucide="shield-check" class="w-4 h-4 text-emerald-600 shrink-0"></i>
+                        <span>Thông tin học sinh được bảo mật theo SĐT phụ huynh.</span>
+                    </span>
+                    <button 
+                        type="button" 
+                        onclick="tryDemoSample()" 
+                        class="text-indigo-600 hover:text-indigo-800 font-semibold underline decoration-indigo-300 underline-offset-2 shrink-0"
+                    >
+                        Xem thử mẫu
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Khu vực hiển thị kết quả tra cứu -->
+        <section id="resultContainer" aria-live="polite" class="space-y-6">
+            <!-- Nội dung thẻ phiếu điểm sẽ được render tại đây -->
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-200/80 bg-white/70 py-6 mt-auto">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 text-center text-xs sm:text-sm text-slate-500 space-y-1">
+            <p class="font-medium text-slate-600">Cổng Thông Tin Tra Cứu Điểm Kiểm Tra Giữa Kì I • Môn Toán THCS</p>
+            <p class="text-xs text-slate-400">Nếu số điện thoại chưa cập nhật hoặc có sai sót thông tin, Quý phụ huynh vui lòng liên hệ Giáo viên bộ môn Toán.</p>
+        </div>
+    </footer>
+
+    <!-- ========================================================================= -->
+    <!-- MODAL QUẢN TRỊ DÀNH CHO GIÁO VIÊN (CẬP NHẬT TỪ EXCEL & XUẤT FILE HTML)     -->
+    <!-- ========================================================================= -->
+    <div id="teacherModal" class="fixed inset-0 z-50 hidden bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white rounded-3xl shadow-2xl border border-slate-200 w-full max-w-2xl overflow-hidden my-6 animate-card">
+            <!-- Header Modal -->
+            <div class="px-6 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center">
+                        <i data-lucide="file-spreadsheet" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-900 text-base sm:text-lg leading-tight">Quản Lý Dữ Liệu Học Sinh (Giáo Viên)</h3>
+                        <p class="text-xs text-slate-500" id="dataSummaryText">Đang tải thông tin dữ liệu...</p>
+                    </div>
+                </div>
+                <button onclick="closeTeacherModal()" class="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-200/70 rounded-xl transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Body Modal -->
+            <div class="p-6 space-y-5 max-h-[78vh] overflow-y-auto">
+                <!-- Hướng dẫn nhanh -->
+                <div class="bg-indigo-50/80 border border-indigo-200/80 rounded-2xl p-4 text-xs sm:text-sm text-indigo-950 space-y-1.5">
+                    <p class="font-bold text-indigo-900 flex items-center gap-1.5">
+                        <i data-lucide="sparkles" class="w-4 h-4 text-indigo-600"></i>
+                        Hướng dẫn cập nhật từ file Excel 6 cột:
+                    </p>
+                    <ol class="list-decimal list-inside space-y-1 text-indigo-900/90">
+                        <li>Sắp xếp 6 cột trong Excel theo thứ tự: <strong>Họ tên | Lớp | SĐT phụ huynh | Điểm giữa kì | Xếp hạng | Nhận xét</strong>.</li>
+                        <li>Bôi đen vùng dữ liệu (không lấy dòng tiêu đề), nhấn <strong>Ctrl + C</strong> và dán vào ô bên dưới.</li>
+                        <li>Bấm <strong>"Nạp dữ liệu mới"</strong> để kiểm tra thử, sau đó bấm <strong>"Tải file HTML mới"</strong> để gửi cho phụ huynh.</li>
+                    </ol>
+                </div>
+
+                <!-- Khu vực dán dữ liệu Excel -->
+                <div>
+                    <label for="excelPasteArea" class="block text-sm font-bold text-slate-800 mb-1.5">
+                        Dán dữ liệu copy từ Excel vào đây:
+                    </label>
+                    <textarea 
+                        id="excelPasteArea" 
+                        rows="5" 
+                        placeholder="Ví dụ định dạng 6 cột copy từ Excel:&#10;Nguyễn Văn A	9A6	0912345678	9.5	1	Nắm vững kiến thức"
+                        class="w-full p-3.5 bg-slate-50 border border-slate-300 rounded-2xl text-xs font-mono focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                    ></textarea>
+                    <div class="mt-2.5 flex flex-wrap items-center justify-between gap-2">
+                        <span id="importFeedback" class="text-xs font-medium text-slate-500">Hỗ trợ copy trực tiếp từ Excel (Tab) hoặc CSV.</span>
+                        <button 
+                            type="button" 
+                            onclick="importFromExcelPaste()" 
+                            class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs transition-colors flex items-center gap-1.5"
+                        >
+                            <i data-lucide="upload" class="w-4 h-4"></i>
+                            <span>Nạp dữ liệu mới</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Các thao tác xuất bản & khôi phục -->
+                <div class="pt-4 border-t border-slate-200 space-y-3">
+                    <p class="text-sm font-bold text-slate-800">Xuất bản & Lưu trữ:</p>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <button 
+                            type="button" 
+                            onclick="downloadStandaloneHtml()" 
+                            class="px-4 py-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2"
+                        >
+                            <i data-lucide="download" class="w-4 h-4"></i>
+                            <span>Tải file HTML mới (.html)</span>
+                        </button>
+                        <button 
+                            type="button" 
+                            onclick="copyFullHtmlCode()" 
+                            class="px-4 py-3 bg-slate-800 hover:bg-slate-900 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-xs transition-colors flex items-center justify-center gap-2"
+                        >
+                            <i data-lucide="code-2" class="w-4 h-4"></i>
+                            <span>Sao chép mã HTML hoàn chỉnh</span>
+                        </button>
+                    </div>
+
+                    <div class="pt-2 flex items-center justify-between">
+                        <span class="text-xs text-slate-500">Muốn quay lại danh sách 141 HS ban đầu?</span>
+                        <button 
+                            type="button" 
+                            onclick="resetToDefaultData()" 
+                            class="text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-3 py-1.5 rounded-lg transition-colors flex items-center gap-1"
+                        >
+                            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                            <span>Khôi phục dữ liệu gốc (141 HS)</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Modal -->
+            <div class="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex justify-end">
+                <button onclick="closeTeacherModal()" class="px-5 py-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 text-sm font-semibold rounded-xl transition-colors">
+                    Đóng
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // =========================================================================
+        // 1. DỮ LIỆU GỐC TÍCH HỢP SẴN TỪ FILE 'Điểm GK1.xlsx' (141 HỌC SINH)
+        // =========================================================================
+        const DEFAULT_STUDENTS_DATA = [
+            {"name":"Đậu Bảo Anh","className":"9A6","phone":"0915022345","score":8.75,"rank":20,"comment":"Hạng 20/44. Có 7 bạn xếp cùng hạng. Nhật xét:Có cố gắng"},
+            {"name":"Lê Mai Thiên Anh","className":"9A6","phone":"0967454993","score":8.25,"rank":30,"comment":"Hạng 30/44. Có 5 bạn xếp cùng hạng. Nhật xét:Có cố gắng"},
+            {"name":"Nguyễn Quang Tuấn Anh","className":"9A6","phone":"0334073544","score":7.5,"rank":37,"comment":"Hạng 37/44. Có 3 bạn xếp cùng hạng. Nhật xét:Cần cố gắng hơn trong phần Hình học"},
+            {"name":"Nguyễn Thị Ngọc Anh","className":"9A6","phone":"0919450368","score":8.75,"rank":20,"comment":"Hạng 20/44. Có 7 bạn xếp cùng hạng. Nhật xét:Cần cẩn thận hơn trong tính toán"},
+            {"name":"Nguyễn Đức Bình","className":"9A6","phone":"0988752335","score":9.5,"rank":1,"comment":"Hạng 1/44. Có 10 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Ngô Chí Công","className":"9A6","phone":"0977839222","score":5.75,"rank":42,"comment":"Hạng 42/44. Có 2 bạn xếp cùng hạng. Nhật xét:Cần cố gắng hơn"},
+            {"name":"Nguyễn Lương Minh Đức","className":"9A6","phone":"0975764806","score":8.75,"rank":20,"comment":"Hạng 20/44. Có 7 bạn xếp cùng hạng. Nhật xét:Cần cẩn thận hơn trong bài Đúng/Sai"},
+            {"name":"Phan Nguyễn Gia Hân","className":"9A6","phone":"0915667677","score":9.25,"rank":11,"comment":"Hạng 11/44. Có 4 bạn xếp cùng hạng. Nhật xét:Có cố gắng"},
+            {"name":"Trần Nguyễn Bảo Hân","className":"9A6","phone":"0962196505","score":8.5,"rank":27,"comment":"Hạng 27/44. Có 3 bạn xếp cùng hạng. Nhật xét:Chưa nắm được dạng toán tăng giảm phần trăm"},
+            {"name":"Hồ Duy Hoàng","className":"9A6","phone":"0988400287","score":9.5,"rank":1,"comment":"Hạng 1/44. Có 10 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Nguyễn Huy Hoàng","className":"9A6","phone":"0983940985","score":9.5,"rank":1,"comment":"Hạng 1/44. Có 10 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Lê Mạnh Hùng","className":"9A6","phone":"0978328526","score":9.5,"rank":1,"comment":"Hạng 1/44. Có 10 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Trịnh Xuân Huy","className":"9A6","phone":"0943268089","score":8.25,"rank":30,"comment":"Hạng 30/44. Có 5 bạn xếp cùng hạng. Nhật xét:Có cố gắng, cần cải thiện phần tính toán."},
+            {"name":"Hoàng Văn Minh Khôi","className":"9A6","phone":"0946719202","score":9.5,"rank":1,"comment":"Hạng 1/44. Có 10 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Lê Giang Lâm","className":"9A6","phone":"0984507909","score":8.75,"rank":20,"comment":"Hạng 20/44. Có 7 bạn xếp cùng hạng. Nhật xét:Cần cẩn thận hơn trong bài toán lượng giác"},
+            {"name":"Trần Nguyễn Hà Linh","className":"9A6","phone":"0971994781","score":8.25,"rank":30,"comment":"Hạng 30/44. Có 5 bạn xếp cùng hạng. Nhật xét:Đọc kĩ đề tránh sai sót đáng tiếc"},
+            {"name":"Võ Hà Linh","className":"9A6","phone":"0912202686","score":8.0,"rank":35,"comment":"Hạng 35/44. Có 2 bạn xếp cùng hạng. Nhật xét:Cần cẩn thận hơn trong tính toán"},
+            {"name":"Đậu Bảo Long","className":"9A6","phone":"0974243535","score":8.25,"rank":30,"comment":"Hạng 30/44. Có 5 bạn xếp cùng hạng. Nhật xét:Cần cẩn thận hơn trong bài Đúng/Sai"},
+            {"name":"Nguyễn Đình Long","className":"9A6","phone":"0399736218","score":8.75,"rank":20,"comment":"Hạng 20/44. Có 7 bạn xếp cùng hạng. Nhật xét:Có cố gắng"},
+            {"name":"Phan Xuân Nhật Minh","className":"9A6","phone":"0355188189","score":8.75,"rank":20,"comment":"Hạng 20/44. Có 7 bạn xếp cùng hạng. Nhật xét:Nhầm lẫn trong bài toán tỉ số lượng giác"},
+            {"name":"Trần Thị Kim Ngân","className":"9A6","phone":"0913076115","score":7.5,"rank":37,"comment":"Hạng 37/44. Có 3 bạn xếp cùng hạng. Nhật xét:Cần rèn luyện thêm phần giải toán lập hệ phương trình"},
+            {"name":"Phạm Tuấn Ngọc","className":"9A6","phone":"0389676623","score":7.5,"rank":37,"comment":"Hạng 37/44. Có 3 bạn xếp cùng hạng. Nhật xét:Chưa làm phần Đúng/Sai, cần rèn luyện phần toán lập hệ phương trình."},
+            {"name":"Trần An Nhàn","className":"9A6","phone":"0983414377","score":9.0,"rank":15,"comment":"Hạng 15/44. Có 5 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Hồ Minh Nhật","className":"9A6","phone":"0915237999","score":9.25,"rank":11,"comment":"Hạng 11/44. Có 4 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Lê Võ Xuân Nhi","className":"9A6","phone":"0328762688","score":9.0,"rank":15,"comment":"Hạng 15/44. Có 5 bạn xếp cùng hạng. Nhật xét:Cần rèn luyện thêm giải"},
+            {"name":"Võ Ngọc Tuệ Nhi","className":"9A6","phone":"0947606226","score":7.25,"rank":40,"comment":"Hạng 40/44. Nhật xét:Chưa nắm được dạng toán tăng giảm phần trăm"},
+            {"name":"Lê Minh Quang","className":"9A6","phone":"0865413403","score":8.5,"rank":27,"comment":"Hạng 27/44. Có 3 bạn xếp cùng hạng. Nhật xét:Cần cẩn thận hơn trong tính toán"},
+            {"name":"Bùi Hoàng Quân","className":"9A6","phone":"0915318700","score":9.5,"rank":1,"comment":"Hạng 1/44. Có 10 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Vũ Minh Quân","className":"9A6","phone":"0904550977","score":9.5,"rank":1,"comment":"Hạng 1/44. Có 10 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Phạm Ngọc Nguyên Thảo","className":"9A6","phone":"0974747639","score":6.75,"rank":41,"comment":"Hạng 41/44. Nhật xét:Cần cố gắng hơn"},
+            {"name":"Nguyễn Thị Anh Thơ","className":"9A6","phone":"0976954045","score":8.75,"rank":20,"comment":"Hạng 20/44. Có 7 bạn xếp cùng hạng. Nhật xét:Cần cẩn thận hơn trong bài toán Đúng/Sai"},
+            {"name":"Hồ Thức Thuận","className":"9A6","phone":"0394570221","score":5.75,"rank":42,"comment":"Hạng 42/44. Có 2 bạn xếp cùng hạng. Nhật xét:Cần cố gắng hơn"},
+            {"name":"Phạm Ngọc Khánh Thư","className":"9A6","phone":"0947889383","score":5.25,"rank":44,"comment":"Hạng 44/44. Nhật xét:Cần cố gắng hơn"},
+            {"name":"Nguyễn Bảo Trang","className":"9A6","phone":"0913464986","score":9.5,"rank":1,"comment":"Hạng 1/44. Có 10 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Nguyễn Trần Bảo Trang","className":"9A6","phone":"0976249668","score":9.0,"rank":15,"comment":"Hạng 15/44. Có 5 bạn xếp cùng hạng. Nhật xét:Có cố gắng"},
+            {"name":"Cao Huyền Bảo Trâm","className":"9A6","phone":"0936323487","score":9.25,"rank":11,"comment":"Hạng 11/44. Có 4 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Ngô Minh Trí","className":"9A6","phone":"0936474799","score":9.5,"rank":1,"comment":"Hạng 1/44. Có 10 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Thái Thảo Uyên","className":"9A6","phone":"0967333276","score":9.0,"rank":15,"comment":"Hạng 15/44. Có 5 bạn xếp cùng hạng. Nhật xét:Cần cẩn thận hơn trong tính toán"},
+            {"name":"Nguyễn Xuân Việt","className":"9A6","phone":"0987235666","score":9.5,"rank":1,"comment":"Hạng 1/44. Có 10 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Lê Hồng Vinh","className":"9A6","phone":"0377574347","score":9.0,"rank":15,"comment":"Hạng 15/44. Có 5 bạn xếp cùng hạng. Nhật xét:Có cố gắng"},
+            {"name":"Lê Hoàng Vũ","className":"9A6","phone":"0912632899","score":8.5,"rank":27,"comment":"Hạng 27/44. Có 3 bạn xếp cùng hạng. Nhật xét:Cần rèn luyện thêm dạng toán công việc"},
+            {"name":"Phạm Hoàng Vy","className":"9A6","phone":"0979797992","score":8.0,"rank":35,"comment":"Hạng 35/44. Có 2 bạn xếp cùng hạng. Nhật xét:Cần rèn luyện thêm dạng toán chuyển động"},
+            {"name":"Đặng Trần Hoàng Yến","className":"9A6","phone":"0979855584","score":8.25,"rank":30,"comment":"Hạng 30/44. Có 5 bạn xếp cùng hạng. Nhật xét:Cần cẩn thận hơn trong tính toán"},
+            {"name":"Đinh Hoàng Bảo Yến","className":"9A6","phone":"0834064243","score":9.25,"rank":11,"comment":"Hạng 11/44. Có 4 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Hồ Hoài An","className":"9A2","phone":"0967982115","score":6.5,"rank":42,"comment":"Hạng 42/47. Có 3 bạn xếp cùng hạng. Nhật xét:Hổng nhiều kiến thức"},
+            {"name":"Lê Hữu Bảo","className":"9A2","phone":"0387035388","score":8.25,"rank":35,"comment":"Hạng 35/47. Có 4 bạn xếp cùng hạng. Nhật xét:Tính toán còn sai sót"},
+            {"name":"Phan Nguyễn Gia Bảo","className":"9A2","phone":"0912662612","score":9.0,"rank":18,"comment":"Hạng 18/47. Có 7 bạn xếp cùng hạng. Nhật xét:Tính toán còn sai sót"},
+            {"name":"Lê Văn Hải Bằng","className":"9A2","phone":"0916909385","score":8.75,"rank":25,"comment":"Hạng 25/47. Có 5 bạn xếp cùng hạng. Nhật xét:Nhầm lẫn về tỉ số lượng giác"},
+            {"name":"Nguyễn Thị Dung","className":"9A2","phone":"0832936768","score":8.5,"rank":30,"comment":"Hạng 30/47. Có 5 bạn xếp cùng hạng. Nhật xét:Nhầm lẫn trong vẽ hình"},
+            {"name":"Nguyễn Quốc Dũng","className":"9A2","phone":"0988528655","score":9.25,"rank":10,"comment":"Hạng 10/47. Có 8 bạn xếp cùng hạng. Nhật xét:Cần cẩn thận hơn tron làm bài"},
+            {"name":"Võ Hoàng Duy","className":"9A2","phone":"0944081123","score":9.5,"rank":2,"comment":"Hạng 2/47. Có 8 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Nguyễn Đức Thành Đạt","className":"9A2","phone":"0916447635","score":8.75,"rank":25,"comment":"Hạng 25/47. Có 5 bạn xếp cùng hạng. Nhật xét:Cần cẩn thận hơn trong tính toán"},
+            {"name":"Lương Quốc Hải Đăng","className":"9A2","phone":"0877967477","score":9.5,"rank":2,"comment":"Hạng 2/47. Có 8 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Dương Thị Lam Giang","className":"9A2","phone":"0964856658","score":8.5,"rank":30,"comment":"Hạng 30/47. Có 5 bạn xếp cùng hạng. Nhật xét:Sai trắc nghiệm"},
+            {"name":"Hồ Ngọc Hải","className":"9A2","phone":"0913275989","score":9.0,"rank":18,"comment":"Hạng 18/47. Có 7 bạn xếp cùng hạng. Nhật xét:Cần cẩn thận hơn trong tính toán"},
+            {"name":"Nguyễn Ngọc Hải","className":"9A2","phone":"0945772128","score":9.0,"rank":18,"comment":"Hạng 18/47. Có 7 bạn xếp cùng hạng. Nhật xét:Cần cẩn thận hơn trong tính toán"},
+            {"name":"Hồ Ngọc Hân","className":"9A2","phone":"0369269999","score":9.25,"rank":10,"comment":"Hạng 10/47. Có 8 bạn xếp cùng hạng. Nhật xét:Có tiến bộ"},
+            {"name":"Lê Ngọc Hân","className":"9A2","phone":"0975645555","score":8.25,"rank":35,"comment":"Hạng 35/47. Có 4 bạn xếp cùng hạng. Nhật xét:Cần cẩn thận hơn trong bài toán trắc nghiệm"},
+            {"name":"Trần Bảo Hân","className":"9A2","phone":"0393351866","score":8.75,"rank":25,"comment":"Hạng 25/47. Có 5 bạn xếp cùng hạng. Nhật xét:Tính toán còn sai sót"},
+            {"name":"Phan Minh Hiếu","className":"9A2","phone":"0973134979","score":9.25,"rank":10,"comment":"Hạng 10/47. Có 8 bạn xếp cùng hạng. Nhật xét:Cần cẩn thận hơn trong tính toán"},
+            {"name":"Nguyễn Minh Huyền","className":"9A2","phone":"0979828778","score":9.0,"rank":18,"comment":"Hạng 18/47. Có 7 bạn xếp cùng hạng. Nhật xét:Cẩn thận hơn trong bài toán Đúng/Sai"},
+            {"name":"Nguyễn Ngọc Huyền","className":"9A2","phone":"0918459896","score":8.5,"rank":30,"comment":"Hạng 30/47. Có 5 bạn xếp cùng hạng. Nhật xét:Chưa nắm được dạng toán tăng giảm phần trăm"},
+            {"name":"Hoàng Thị Lê Khanh","className":"9A2","phone":"0828985558","score":9.5,"rank":2,"comment":"Hạng 2/47. Có 8 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Nguyễn Thị Kim Khánh","className":"9A2","phone":"0983112558","score":8.5,"rank":30,"comment":"Hạng 30/47. Có 5 bạn xếp cùng hạng. Nhật xét:Cần tính toán cẩn thận hơn"},
+            {"name":"Nguyễn Tuấn Kiệt","className":"9A2","phone":"0915039038","score":9.5,"rank":2,"comment":"Hạng 2/47. Có 8 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Phan Đan Lê","className":"9A2","phone":"0915979055","score":9.25,"rank":10,"comment":"Hạng 10/47. Có 8 bạn xếp cùng hạng. Nhật xét:Có cố gắng"},
+            {"name":"Nguyễn Cao Thành Long","className":"9A2","phone":"0901549111","score":7.75,"rank":39,"comment":"Hạng 39/47. Nhật xét:Tính toán còn sai nhiều"},
+            {"name":"Lê Anh Nhật Minh","className":"9A2","phone":"0986386123","score":9.0,"rank":18,"comment":"Hạng 18/47. Có 7 bạn xếp cùng hạng. Nhật xét:Cần làm bài cẩn thận hơn"},
+            {"name":"Phan Nhật Minh","className":"9A2","phone":"0949941951","score":9.5,"rank":2,"comment":"Hạng 2/47. Có 8 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Trần Đức Minh","className":"9A2","phone":"0915545357","score":8.25,"rank":35,"comment":"Hạng 35/47. Có 4 bạn xếp cùng hạng. Nhật xét:Trắc nghiệm còn sai sót nhiều"},
+            {"name":"Dương Trà My","className":"9A2","phone":"0918240567","score":9.5,"rank":2,"comment":"Hạng 2/47. Có 8 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Lê Thị Thảo My","className":"9A2","phone":"0968777304","score":5.5,"rank":45,"comment":"Hạng 45/47. Nhật xét:Cần cố gắng hơn"},
+            {"name":"Hồ Nguyễn Bảo Nam","className":"9A2","phone":"0358878266","score":6.75,"rank":41,"comment":"Hạng 41/47. Nhật xét:Cần cố gắng hơn"},
+            {"name":"Trần Thị Kim Ngân","className":"9A2","phone":"0941177150","score":9.0,"rank":18,"comment":"Hạng 18/47. Có 7 bạn xếp cùng hạng. Nhật xét:Có cố gắng"},
+            {"name":"Nguyễn Bùi Bảo Ngọc","className":"9A2","phone":"0979244066","score":9.75,"rank":1,"comment":"Hạng 1/47. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Trần Thị Ánh Ngọc","className":"9A2","phone":"0372336485","score":6.5,"rank":42,"comment":"Hạng 42/47. Có 3 bạn xếp cùng hạng. Nhật xét:Hổng kiến thức Hình, tính toán còn sai sót."},
+            {"name":"Nguyễn Hà Long Nhật","className":"9A2","phone":"0985556630","score":8.75,"rank":25,"comment":"Hạng 25/47. Có 5 bạn xếp cùng hạng. Nhật xét:Tính toán sai cơ bản"},
+            {"name":"Nguyễn Minh Quân","className":"9A2","phone":"0972180334","score":7.0,"rank":40,"comment":"Hạng 40/47. Nhật xét:Phần Hình còn yếu, cần cố gắng"},
+            {"name":"Đào Nhật Tân","className":"9A2","phone":"0947314552","score":5.0,"rank":47,"comment":"Hạng 47/47. Nhật xét:Cần cố gắng hơn nữa"},
+            {"name":"Đậu Thị Thu Thủy","className":"9A2","phone":"0968849009","score":9.25,"rank":10,"comment":"Hạng 10/47. Có 8 bạn xếp cùng hạng. Nhật xét:Cần trình bày chặt chẽ hơn"},
+            {"name":"Phạm Minh Thư","className":"9A2","phone":"0972944748","score":9.0,"rank":18,"comment":"Hạng 18/47. Có 7 bạn xếp cùng hạng. Nhật xét:Có cố gắng"},
+            {"name":"Mai Linh Trang","className":"9A2","phone":"0915939937","score":8.75,"rank":25,"comment":"Hạng 25/47. Có 5 bạn xếp cùng hạng. Nhật xét:Có cố gắng"},
+            {"name":"Nguyễn Hoàng Bảo Trang","className":"9A2","phone":"0916550336","score":9.25,"rank":10,"comment":"Hạng 10/47. Có 8 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Nguyễn Hoàng Hà Trang","className":"9A2","phone":"0916550336","score":9.5,"rank":2,"comment":"Hạng 2/47. Có 8 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Vũ Bảo Trang","className":"9A2","phone":"0914603680","score":9.25,"rank":10,"comment":"Hạng 10/47. Có 8 bạn xếp cùng hạng. Nhật xét:Có cố gắng"},
+            {"name":"Đinh Hoàng Bảo Trân","className":"9A2","phone":"0965968680","score":5.25,"rank":46,"comment":"Hạng 46/47. Nhật xét:Cần cố gắng hơn nữa"},
+            {"name":"Đặng Thanh Trúc","className":"9A2","phone":"0367420993","score":8.25,"rank":35,"comment":"Hạng 35/47. Có 4 bạn xếp cùng hạng. Nhật xét:Trắc nghiệm còn sai nhiều"},
+            {"name":"Trần Ngọc Tú","className":"9A2","phone":"0962282718","score":9.5,"rank":2,"comment":"Hạng 2/47. Có 8 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Nguyễn Quốc Tuấn","className":"9A2","phone":"0378716870","score":6.5,"rank":42,"comment":"Hạng 42/47. Có 3 bạn xếp cùng hạng. Nhật xét:Có cố gắng"},
+            {"name":"Ngũ Nguyễn Quốc Việt","className":"9A2","phone":"0946078081","score":8.5,"rank":30,"comment":"Hạng 30/47. Có 5 bạn xếp cùng hạng. Nhật xét:Cần cẩn thận hơn trong tính toán"},
+            {"name":"Trần Quốc Việt","className":"9A2","phone":"0977442925","score":9.25,"rank":10,"comment":"Hạng 10/47. Có 8 bạn xếp cùng hạng. Nhật xét:Có cố gắng"},
+            {"name":"Đào Thị Diệu Anh","className":"7A2","phone":"0946381369","score":9.25,"rank":13,"comment":"Hạng 13/50. Có 9 bạn xếp cùng hạng. Nhật xét:Cần cẩn thận hơn trong trắc nghiệm"},
+            {"name":"Lê Quỳnh Anh","className":"7A2","phone":"0985621623","score":9.5,"rank":8,"comment":"Hạng 8/50. Có 5 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Vũ Xuân Huyền Anh","className":"7A2","phone":"0975238568","score":8.75,"rank":33,"comment":"Hạng 33/50. Có 6 bạn xếp cùng hạng. Nhật xét:Còn sai sót trong tính toán"},
+            {"name":"Hồ Trọng Việt Anh","className":"7A2","phone":"0948228595","score":9.25,"rank":13,"comment":"Hạng 13/50. Có 9 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Đào Duy Bách","className":"7A2","phone":"0919235919","score":7.75,"rank":47,"comment":"Hạng 47/50. Có 2 bạn xếp cùng hạng. Nhật xét:Cần cẩn thận hơn trong tính toán"},
+            {"name":"Nguyễn Ngân Bình","className":"7A2","phone":"0977244481","score":9.25,"rank":13,"comment":"Hạng 13/50. Có 9 bạn xếp cùng hạng. Nhật xét:Chú ý hơn trong trắc nghiệm"},
+            {"name":"Bùi Nguyễn Quỳnh Chi","className":"7A2","phone":"0965211382","score":9.75,"rank":5,"comment":"Hạng 5/50. Có 3 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Trần Ngọc Linh Chi","className":"7A2","phone":"0966779609","score":8.25,"rank":42,"comment":"Hạng 42/50. Có 2 bạn xếp cùng hạng. Nhật xét:Cần cẩn thận hơn trong tính toán"},
+            {"name":"Trần Kim Đại","className":"7A2","phone":"0975583345","score":9.5,"rank":8,"comment":"Hạng 8/50. Có 5 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Trần Linh Đan","className":"7A2","phone":"0943101555","score":8.0,"rank":44,"comment":"Hạng 44/50. Có 3 bạn xếp cùng hạng. Nhật xét:Làm sai đề câu 14"},
+            {"name":"Nguyễn Thành Đạt","className":"7A2","phone":"0975140759","score":10.0,"rank":1,"comment":"Hạng 1/50. Có 4 bạn xếp cùng hạng. Nhật xét:Học tốt"},
+            {"name":"Hoàng Bích Diệp","className":"7A2","phone":"0983692589","score":8.5,"rank":39,"comment":"Hạng 39/50. Có 3 bạn xếp cùng hạng. Nhật xét:Cần tính toán cẩn thận hơn"},
+            {"name":"Nguyễn Thị Ngọc Diệp","className":"7A2","phone":"0368606247","score":9.25,"rank":13,"comment":"Hạng 13/50. Có 9 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Nguyễn Trần Minh Đức","className":"7A2","phone":"0975335009","score":9.0,"rank":22,"comment":"Hạng 22/50. Có 11 bạn xếp cùng hạng. Nhật xét:Cần cố gắng phần chứng minh định lí."},
+            {"name":"Nguyễn Linh Giang","className":"7A2","phone":"0941358910","score":8.75,"rank":33,"comment":"Hạng 33/50. Có 6 bạn xếp cùng hạng. Nhật xét:Còn sai sót trong toán phần trăm, cố gắng hơn trong phần chứng minh"},
+            {"name":"Nguyễn Trần Bảo Hân","className":"7A2","phone":"0976585174","score":9.75,"rank":5,"comment":"Hạng 5/50. Có 3 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Tăng Thế Hùng","className":"7A2","phone":"0904057789","score":9.0,"rank":22,"comment":"Hạng 22/50. Có 11 bạn xếp cùng hạng. Nhật xét:Cần ôn tập lại phần chứng minh định lí"},
+            {"name":"Lê Gia Hưng","className":"7A2","phone":"0946106555","score":9.75,"rank":5,"comment":"Hạng 5/50. Có 3 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Nguyễn Mai Hương","className":"7A2","phone":"0915998848","score":10.0,"rank":1,"comment":"Hạng 1/50. Có 4 bạn xếp cùng hạng. Nhật xét:Học tốt"},
+            {"name":"Hồ Ngọc Khánh","className":"7A2","phone":"0982037680","score":7.75,"rank":47,"comment":"Hạng 47/50. Có 2 bạn xếp cùng hạng. Nhật xét:Tính toán còn sai sót nhiều, cần cố gắng hơn."},
+            {"name":"Nguyễn Đăng Khôi","className":"7A2","phone":"0945545239","score":8.0,"rank":44,"comment":"Hạng 44/50. Có 3 bạn xếp cùng hạng. Nhật xét:Cần cố gắng trong phần chứng minh"},
+            {"name":"Bùi Mai Thục Linh","className":"7A2","phone":"0968757806","score":9.0,"rank":22,"comment":"Hạng 22/50. Có 11 bạn xếp cùng hạng. Nhật xét:Còn sai sót trong toán phần trăm."},
+            {"name":"Nguyễn Phan Nhật Linh","className":"7A2","phone":"0984217186","score":9.5,"rank":8,"comment":"Hạng 8/50. Có 5 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Hoàng Đức Mạnh","className":"7A2","phone":"0358830896","score":9.0,"rank":22,"comment":"Hạng 22/50. Có 11 bạn xếp cùng hạng. Nhật xét:cẩn thận hơn trong tính toán"},
+            {"name":"Cao Tiến Minh","className":"7A2","phone":"0987592937","score":9.5,"rank":8,"comment":"Hạng 8/50. Có 5 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Trần Bình Minh","className":"7A2","phone":"0914124719","score":9.0,"rank":22,"comment":"Hạng 22/50. Có 11 bạn xếp cùng hạng. Nhật xét:Còn sai sót trong tính toán"},
+            {"name":"Hoàng Hà My","className":"7A2","phone":"0946728288","score":9.0,"rank":22,"comment":"Hạng 22/50. Có 11 bạn xếp cùng hạng. Nhật xét:Phần chứng minh cần giải thích rõ hơn"},
+            {"name":"Trần Thảo My","className":"7A2","phone":"0912391083","score":9.5,"rank":8,"comment":"Hạng 8/50. Có 5 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Thái Thị Bảo Ngân","className":"7A2","phone":"0383039566","score":8.75,"rank":33,"comment":"Hạng 33/50. Có 6 bạn xếp cùng hạng. Nhật xét:Còn sai sót trong tính toán, cần đọc kĩ đề"},
+            {"name":"Trần Bảo Ngọc","className":"7A2","phone":"0915052528","score":9.0,"rank":22,"comment":"Hạng 22/50. Có 11 bạn xếp cùng hạng. Nhật xét:Cẩn thận hơn trong bài toán Đúng/Sai"},
+            {"name":"Trần Thảo Nguyên","className":"7A2","phone":"0979862699","score":9.25,"rank":13,"comment":"Hạng 13/50. Có 9 bạn xếp cùng hạng. Nhật xét:Cần cẩn thận hơn trong tính toán"},
+            {"name":"Nguyễn Hồ Khôi Nguyên","className":"7A2","phone":"0944898585","score":8.0,"rank":44,"comment":"Hạng 44/50. Có 3 bạn xếp cùng hạng. Nhật xét:Sai đề 2 câu, cần đọc kĩ đề."},
+            {"name":"Nguyễn Ngọc Nhật","className":"7A2","phone":"0977739999","score":8.75,"rank":33,"comment":"Hạng 33/50. Có 6 bạn xếp cùng hạng. Nhật xét:Cần cố gắng trong phần chứng minh"},
+            {"name":"Lê Quỳnh Như","className":"7A2","phone":"0976986678","score":9.25,"rank":13,"comment":"Hạng 13/50. Có 9 bạn xếp cùng hạng. Nhật xét:Phần chứng minh cần giải thích rõ hơn"},
+            {"name":"Ngụy Nam Phong","className":"7A2","phone":"0915121222","score":8.5,"rank":39,"comment":"Hạng 39/50. Có 3 bạn xếp cùng hạng. Nhật xét:Tính toán còn sai sót"},
+            {"name":"Nguyễn Công Phúc","className":"7A2","phone":"0914746355","score":8.75,"rank":33,"comment":"Hạng 33/50. Có 6 bạn xếp cùng hạng. Nhật xét:Tính toán còn sai sót"},
+            {"name":"Đặng Ngọc Sơn","className":"7A2","phone":"0987099188","score":10.0,"rank":1,"comment":"Hạng 1/50. Có 4 bạn xếp cùng hạng. Nhật xét:Học tốt"},
+            {"name":"Phan Thị Minh Tâm","className":"7A2","phone":"0982067122","score":9.25,"rank":13,"comment":"Hạng 13/50. Có 9 bạn xếp cùng hạng. Nhật xét:Nắm vững kiến thức"},
+            {"name":"Nguyễn Đức Thành","className":"7A2","phone":"0916748684","score":6.0,"rank":50,"comment":"Hạng 50/50. Nhật xét:Tính toán còn sai sót rất nhiều, cần cố gắng hơn."},
+            {"name":"Nguyễn Thái Diệp Thảo","className":"7A2","phone":"0986202856","score":9.0,"rank":22,"comment":"Hạng 22/50. Có 11 bạn xếp cùng hạng. Nhật xét:Trắc nghiệm còn sai sót nhiều"},
+            {"name":"Ngô Nguyễn Anh Thư","className":"7A2","phone":"0949931577","score":7.25,"rank":49,"comment":"Hạng 49/50. Nhật xét:Tính toán còn sai sót, phần Hình cần ôn tập thêm."},
+            {"name":"Bùi Mai Trang","className":"7A2","phone":"0915568227","score":9.0,"rank":22,"comment":"Hạng 22/50. Có 11 bạn xếp cùng hạng. Nhật xét:Cần cẩn thận hơn trong tính toán"},
+            {"name":"Trần Thanh Trang","className":"7A2","phone":"0352056818","score":8.75,"rank":33,"comment":"Hạng 33/50. Có 6 bạn xếp cùng hạng. Nhật xét:Cần ôn tập thêm phần chứng minh"},
+            {"name":"Nguyễn Quốc Trí","className":"7A2","phone":"0988528655","score":10.0,"rank":1,"comment":"Hạng 1/50. Có 4 bạn xếp cùng hạng. Nhật xét:Học tốt"},
+            {"name":"Nguyễn Mạnh Tuấn","className":"7A2","phone":"0917655557","score":9.0,"rank":22,"comment":"Hạng 22/50. Có 11 bạn xếp cùng hạng. Nhật xét:Cần ôn tập thêm phần Hình"},
+            {"name":"Dư Anh Vũ","className":"7A2","phone":"0974019089","score":9.25,"rank":13,"comment":"Hạng 13/50. Có 9 bạn xếp cùng hạng. Nhật xét:Cần ôn tập thêm phần chứng minh"},
+            {"name":"Võ Hà Thảo Quyên","className":"7A2","phone":"0984576242","score":8.5,"rank":39,"comment":"Hạng 39/50. Có 3 bạn xếp cùng hạng. Nhật xét:Cần ôn tập thêm phần Hình"},
+            {"name":"Nguyễn Thị Thu Thảo","className":"7A2","phone":"0985293115","score":9.25,"rank":13,"comment":"Hạng 13/50. Có 9 bạn xếp cùng hạng. Nhật xét:Tính toán còn sai sót."},
+            {"name":"Hoàng Khánh Linh","className":"7A2","phone":"0936227355","score":9.0,"rank":22,"comment":"Hạng 22/50. Có 11 bạn xếp cùng hạng. Nhật xét:Cần ôn tập thêm phần Hình"},
+            {"name":"Nguyễn Lam Khanh","className":"7A2","phone":"0916241284","score":8.25,"rank":42,"comment":"Hạng 42/50. Có 2 bạn xếp cùng hạng. Nhật xét:Tính toán còn sai sót nhiều, cần cố gắng hơn."}
+        ];
+
+        // Dữ liệu mẫu minh họa chỉ dùng cho số điện thoại ví dụ 0912345678
+        const DEMO_SAMPLE_STUDENT = {
+            name: "Nguyễn Văn An",
+            className: "9A6",
+            phone: "0912345678",
+            score: 9.25,
+            rank: 11,
+            comment: "Hạng 11/44. Có 4 bạn xếp cùng hạng. Nhận xét: Nắm vững kiến thức, trình bày bài giải rõ ràng và khoa học.",
+            isDemo: true
+        };
+
+        const STORAGE_KEY = 'math_gk1_students_data_v1';
+        let STUDENTS_DATA = [];
+
+        // =========================================================================
+        // 2. KHỞI TẠO ỨNG DỤNG & QUẢN LÝ DỮ LIỆU
+        // =========================================================================
+        function initApp() {
+            // Tải dữ liệu từ localStorage nếu giáo viên đã từng nạp mới, nếu không dùng dữ liệu gốc
+            try {
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const parsed = JSON.parse(saved);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        STUDENTS_DATA = parsed;
+                    } else {
+                        STUDENTS_DATA = [...DEFAULT_STUDENTS_DATA];
+                    }
+                } else {
+                    STUDENTS_DATA = [...DEFAULT_STUDENTS_DATA];
+                }
+            } catch (e) {
+                STUDENTS_DATA = [...DEFAULT_STUDENTS_DATA];
+            }
+
+            renderActiveClassesBadges();
+            updateTeacherDataSummary();
+            lucide.createIcons();
+
+            // Lắng nghe sự kiện gõ phím trong ô số điện thoại
+            const phoneInput = document.getElementById('phoneInput');
+            const clearBtn = document.getElementById('clearBtn');
+
+            phoneInput.addEventListener('input', () => {
+                if (phoneInput.value.trim().length > 0) {
+                    clearBtn.classList.remove('hidden');
+                } else {
+                    clearBtn.classList.add('hidden');
+                }
+            });
+        }
+
+        // Hiển thị badge các lớp đang mở tra cứu trên giao diện chính
+        function renderActiveClassesBadges() {
+            const container = document.getElementById('activeClassesBadges');
+            if (!container) return;
+
+            const classCounts = {};
+            STUDENTS_DATA.forEach(s => {
+                const cls = (s.className || 'Khác').trim();
+                classCounts[cls] = (classCounts[cls] || 0) + 1;
+            });
+
+            const classes = Object.keys(classCounts);
+            container.innerHTML = classes.map(cls => `
+                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/80">
+                    <span>Lớp ${escapeHtml(cls)}</span>
+                </span>
+            `).join('');
+        }
+
+        // Cập nhật thống kê tổng quan trong Modal Giáo viên
+        function updateTeacherDataSummary() {
+            const summaryEl = document.getElementById('dataSummaryText');
+            if (!summaryEl) return;
+
+            const classCounts = {};
+            STUDENTS_DATA.forEach(s => {
+                const cls = (s.className || 'Khác').trim();
+                classCounts[cls] = (classCounts[cls] || 0) + 1;
+            });
+
+            const details = Object.entries(classCounts)
+                .map(([cls, count]) => `${cls} (${count} HS)`)
+                .join(', ');
+
+            summaryEl.textContent = `Hiện có ${STUDENTS_DATA.length} học sinh: ${details}`;
+        }
+
+        // =========================================================================
+        // 3. CHUẨN HÓA SỐ ĐIỆN THOẠI & XỬ LÝ TRA CỨU
+        // =========================================================================
+        function normalizePhone(raw) {
+            if (!raw) return '';
+            // Giữ lại các chữ số và dấu + ở đầu
+            let cleaned = String(raw).trim().replace(/[\s\.\-\(\)]/g, '');
+            if (cleaned.startsWith('+84')) {
+                cleaned = '0' + cleaned.slice(3);
+            } else if (cleaned.startsWith('84') && cleaned.length >= 10) {
+                cleaned = '0' + cleaned.slice(2);
+            } else if (cleaned.length === 9 && /^[35789]/.test(cleaned)) {
+                // Nếu phụ huynh nhập thiếu số 0 ở đầu (VD: 915022345 -> 0915022345)
+                cleaned = '0' + cleaned;
+            }
+            return cleaned;
+        }
+
+        // Che bớt 3 chữ số giữa của SĐT để bảo mật khi phụ huynh chụp ảnh màn hình
+        function maskPhone(phone) {
+            const clean = normalizePhone(phone);
+            if (clean.length < 8) return clean;
+            return clean.slice(0, 4) + '***' + clean.slice(-3);
+        }
+
+        // Điền nhanh số ví dụ 0912345678 khi bấm "Xem thử mẫu"
+        function tryDemoSample() {
+            const phoneInput = document.getElementById('phoneInput');
+            const clearBtn = document.getElementById('clearBtn');
+            phoneInput.value = '0912345678';
+            clearBtn.classList.remove('hidden');
+            performSearch('0912345678');
+        }
+
+        function clearInput() {
+            const phoneInput = document.getElementById('phoneInput');
+            const clearBtn = document.getElementById('clearBtn');
+            const resultContainer = document.getElementById('resultContainer');
+            phoneInput.value = '';
+            clearBtn.classList.add('hidden');
+            resultContainer.innerHTML = '';
+            phoneInput.focus();
+        }
+
+        function handleSearch(event) {
+            event.preventDefault();
+            const rawPhone = document.getElementById('phoneInput').value;
+            performSearch(rawPhone);
+        }
+
+        function performSearch(rawPhone) {
+            const resultContainer = document.getElementById('resultContainer');
+            const normalizedInput = normalizePhone(rawPhone);
+
+            // 1. Trường hợp chưa nhập SĐT
+            if (!normalizedInput) {
+                resultContainer.innerHTML = `
+                    <div class="animate-card bg-amber-50 border border-amber-200/90 rounded-2xl p-6 text-center max-w-lg mx-auto">
+                        <div class="w-12 h-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto mb-3">
+                            <i data-lucide="alert-circle" class="w-6 h-6"></i>
+                        </div>
+                        <h3 class="font-bold text-amber-950 text-base mb-1">Vui lòng nhập số điện thoại</h3>
+                        <p class="text-sm text-amber-800">Quý phụ huynh hãy nhập số điện thoại đã đăng ký với nhà trường để xem điểm của con.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            // 2. Trường hợp nhập số ví dụ 0912345678 -> Hiển thị thẻ mẫu minh họa
+            if (normalizedInput === '0912345678') {
+                const demoNotice = `
+                    <div class="animate-card bg-sky-50 border border-sky-200 rounded-2xl px-4 py-3 flex items-center justify-between gap-3 text-sky-900 text-xs sm:text-sm">
+                        <div class="flex items-center gap-2.5">
+                            <i data-lucide="info" class="w-5 h-5 text-sky-600 shrink-0"></i>
+                            <span>Đây là <strong>Dữ liệu mẫu minh họa</strong> cho số ví dụ <code class="font-bold">0912345678</code>. Quý phụ huynh vui lòng nhập SĐT thật của gia đình để xem kết quả chính thức.</span>
+                        </div>
+                    </div>
+                `;
+                resultContainer.innerHTML = demoNotice + renderStudentCard(DEMO_SAMPLE_STUDENT, 0);
+                lucide.createIcons();
+                return;
+            }
+
+            // 3. Tra cứu trong danh sách STUDENTS_DATA
+            const matches = STUDENTS_DATA.filter(student => {
+                return normalizePhone(student.phone) === normalizedInput;
+            });
+
+            // Không tìm thấy kết quả
+            if (matches.length === 0) {
+                resultContainer.innerHTML = `
+                    <div class="animate-card glass-panel border border-slate-200 rounded-3xl p-6 sm:p-8 text-center max-w-lg mx-auto shadow-xs">
+                        <div class="w-14 h-14 rounded-2xl bg-slate-100 text-slate-500 flex items-center justify-center mx-auto mb-4">
+                            <i data-lucide="search-x" class="w-7 h-7"></i>
+                        </div>
+                        <h3 class="font-bold text-slate-900 text-lg mb-2">Không tìm thấy thông tin học sinh</h3>
+                        <p class="text-sm text-slate-600 leading-relaxed mb-5">
+                            Hệ thống chưa ghi nhận số điện thoại <span class="font-bold text-slate-900">${escapeHtml(rawPhone)}</span> trong danh sách tra cứu môn Toán.
+                        </p>
+                        <div class="bg-slate-50 rounded-2xl p-4 text-xs sm:text-sm text-slate-600 text-left space-y-2 border border-slate-200/80">
+                            <p class="font-bold text-slate-800 flex items-center gap-1.5">
+                                <i data-lucide="help-circle" class="w-4 h-4 text-indigo-600"></i>
+                                <span>Gợi ý kiểm tra cho Quý phụ huynh:</span>
+                            </p>
+                            <ul class="list-disc list-inside space-y-1 text-slate-600">
+                                <li>Kiểm tra lại các chữ số đã nhập xem có bị thừa hoặc thiếu số không.</li>
+                                <li>Thử nhập số điện thoại khác của gia đình (số của Bố hoặc Mẹ đã đăng ký với giáo viên).</li>
+                                <li>Nếu vẫn chưa tra cứu được, Quý phụ huynh vui lòng liên hệ trực tiếp <strong>Giáo viên bộ môn Toán</strong> để được hỗ trợ cập nhật.</li>
+                            </ul>
+                        </div>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            // Tìm thấy 1 hoặc nhiều học sinh cùng 1 SĐT phụ huynh
+            let multiNotice = '';
+            if (matches.length > 1) {
+                multiNotice = `
+                    <div class="animate-card bg-indigo-50 border border-indigo-200/90 rounded-2xl px-4 py-3 flex items-center gap-2.5 text-indigo-950 text-xs sm:text-sm font-medium">
+                        <i data-lucide="users" class="w-5 h-5 text-indigo-600 shrink-0"></i>
+                        <span>Tìm thấy <strong>${matches.length} học sinh</strong> được đăng ký cùng số điện thoại này.</span>
+                    </div>
+                `;
+            }
+
+            const cardsHtml = matches.map((student, idx) => renderStudentCard(student, idx)).join('');
+            resultContainer.innerHTML = multiNotice + cardsHtml;
+            lucide.createIcons();
+        }
+
+        // =========================================================================
+        // 4. PHÂN TÍCH DỮ LIỆU & RENDER PHIẾU BÁO ĐIỂM ĐIỆN TỬ
+        // =========================================================================
+
+        // Phân tách chuỗi comment để lấy thông tin xếp hạng và nhận xét chuyên môn gọn đẹp
+        function parseRankAndComment(student) {
+            const rawComment = String(student.comment || '').trim();
+            const className = String(student.className || '').trim();
+            
+            // Đếm sĩ số lớp từ dữ liệu hiện có
+            const classTotalFromData = STUDENTS_DATA.filter(s => String(s.className).trim() === className).length;
+
+            let rankDisplay = '';
+            let sameRankNote = '';
+            let teacherComment = rawComment;
+
+            // Trích xuất "Hạng X/Y" nếu có trong comment
+            const rankMatch = rawComment.match(/Hạng\s*(\d+\s*\/\s*\d+)/i);
+            if (rankMatch) {
+                rankDisplay = `Hạng ${rankMatch[1].replace(/\s+/g, '')}`;
+            } else if (student.rank) {
+                rankDisplay = classTotalFromData > 0 
+                    ? `Hạng ${student.rank}/${classTotalFromData}` 
+                    : `Hạng ${student.rank}`;
+            } else {
+                rankDisplay = 'Đang cập nhật';
+            }
+
+            // Trích xuất ghi chú số bạn cùng hạng nếu có (VD: "Có 7 bạn xếp cùng hạng")
+            const sameRankMatch = rawComment.match(/Có\s+\d+\s+bạn\s+xếp\s+cùng\s+hạng/i);
+            if (sameRankMatch) {
+                sameRankNote = sameRankMatch[0];
+            }
+
+            // Tách phần nội dung nhận xét chuyên môn sau chữ "Nhật xét:" hoặc "Nhận xét:"
+            const commentSplit = rawComment.split(/Nh[ậa]t\s*x[ée]t\s*:\s*/i);
+            if (commentSplit.length > 1) {
+                teacherComment = commentSplit[1].trim();
+            } else {
+                // Nếu không có từ khóa "Nhận xét:", loại bỏ phần "Hạng X/Y. Có Z bạn xếp cùng hạng." ở đầu
+                teacherComment = rawComment
+                    .replace(/^Hạng\s*\d+\s*\/\s*\d+\.?\s*/i, '')
+                    .replace(/^Có\s+\d+\s+bạn\s+xếp\s+cùng\s+hạng\.?\s*/i, '')
+                    .trim();
+            }
+
+            // Viết hoa chữ cái đầu tiên của nhận xét cho chỉnh chu
+            if (teacherComment.length > 0) {
+                teacherComment = teacherComment.charAt(0).toUpperCase() + teacherComment.slice(1);
+            } else {
+                teacherComment = 'Hoàn thành bài kiểm tra Giữa kì I.';
+            }
+
+            return {
+                rankDisplay,
+                sameRankNote,
+                teacherComment
+            };
+        }
+
+        // Xác định cấp độ xếp loại & màu sắc theo thang điểm yêu cầu
+        function getGradeClassification(score) {
+            const num = parseFloat(score);
+            if (isNaN(num)) {
+                return {
+                    label: 'Đã có điểm',
+                    badgeClass: 'bg-slate-100 text-slate-700 border-slate-200',
+                    scoreTextClass: 'text-slate-900',
+                    barColorClass: 'bg-indigo-600',
+                    topBorderClass: 'border-t-indigo-600',
+                    percent: 0
+                };
+            }
+
+            const percent = Math.max(0, Math.min(100, (num / 10) * 100));
+
+            if (num >= 9.0) {
+                return {
+                    label: 'Xuất sắc',
+                    badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                    scoreTextClass: 'text-emerald-600',
+                    barColorClass: 'bg-emerald-500',
+                    topBorderClass: 'border-t-emerald-500',
+                    percent
+                };
+            } else if (num >= 8.0) {
+                return {
+                    label: 'Giỏi',
+                    badgeClass: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+                    scoreTextClass: 'text-indigo-600',
+                    barColorClass: 'bg-indigo-600',
+                    topBorderClass: 'border-t-indigo-600',
+                    percent
+                };
+            } else if (num >= 6.5) {
+                return {
+                    label: 'Khá',
+                    badgeClass: 'bg-sky-50 text-sky-700 border-sky-200',
+                    scoreTextClass: 'text-sky-600',
+                    barColorClass: 'bg-sky-500',
+                    topBorderClass: 'border-t-sky-500',
+                    percent
+                };
+            } else {
+                return {
+                    label: 'Cần cố gắng',
+                    badgeClass: 'bg-amber-50 text-amber-800 border-amber-200',
+                    scoreTextClass: 'text-amber-600',
+                    barColorClass: 'bg-amber-500',
+                    topBorderClass: 'border-t-amber-500',
+                    percent
+                };
+            }
+        }
+
+        // Định dạng điểm gọn đẹp (VD: 8.75 -> 8.75, 9.5 -> 9.5, 10.0 -> 10)
+        function formatScore(score) {
+            const num = parseFloat(score);
+            if (isNaN(num)) return escapeHtml(String(score));
+            return Number.isInteger(num) ? String(num) : String(parseFloat(num.toFixed(2)));
+        }
+
+        // Render thẻ Phiếu Báo Điểm Điện Tử
+        function renderStudentCard(student, index) {
+            const grade = getGradeClassification(student.score);
+            const parsedInfo = parseRankAndComment(student);
+            const formattedScore = formatScore(student.score);
+            const maskedPhone = student.isDemo ? '0912***678' : maskPhone(student.phone);
+            const isTop3 = Number(student.rank) >= 1 && Number(student.rank) <= 3;
+
+            // Chuỗi tóm tắt để phụ huynh sao chép nhanh
+            const summaryText = `PHIẾU BÁO ĐIỂM GIỮA KÌ I - MÔN TOÁN\n- Học sinh: ${student.name} (Lớp ${student.className})\n- Điểm Giữa Kì I: ${formattedScore}/10 (${grade.label})\n- Xếp hạng: ${parsedInfo.rankDisplay}${parsedInfo.sameRankNote ? ' (' + parsedInfo.sameRankNote + ')' : ''}\n- Nhận xét của GV: ${parsedInfo.teacherComment}`;
+            const encodedSummary = encodeURIComponent(summaryText);
+
+            return `
+                <article class="print-card animate-card bg-white rounded-3xl shadow-md shadow-slate-200/60 border border-slate-200/90 border-t-4 ${grade.topBorderClass} overflow-hidden" style="animation-delay: ${index * 90}ms">
+                    
+                    <!-- Nhãn mẫu nếu là dữ liệu thử nghiệm 0912345678 -->
+                    ${student.isDemo ? `
+                        <div class="bg-sky-600 text-white text-[11px] font-bold uppercase tracking-wider px-5 py-1.5 flex items-center justify-between">
+                            <span>Phiếu Báo Điểm Mẫu Minh Họa</span>
+                            <span>Dữ liệu ví dụ</span>
+                        </div>
+                    ` : ''}
+
+                    <!-- Phần 1: Thông tin định danh Học sinh -->
+                    <div class="p-5 sm:p-7 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div class="flex items-center gap-4">
+                            <div class="w-13 h-13 w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-50 to-blue-50 text-indigo-700 flex items-center justify-center font-extrabold text-lg shrink-0 border border-indigo-100 shadow-2xs">
+                                ${getInitials(student.name)}
+                            </div>
+                            <div>
+                                <div class="flex flex-wrap items-center gap-2 mb-1">
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-lg text-xs font-bold bg-indigo-600 text-white shadow-2xs">
+                                        Lớp ${escapeHtml(student.className)}
+                                    </span>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border ${grade.badgeClass}">
+                                        ${grade.label}
+                                    </span>
+                                </div>
+                                <h3 class="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
+                                    ${escapeHtml(student.name)}
+                                </h3>
+                                <p class="text-xs sm:text-sm text-slate-500 mt-0.5 flex items-center gap-1.5">
+                                    <i data-lucide="phone" class="w-3.5 h-3.5 text-slate-400"></i>
+                                    <span>SĐT Phụ huynh: <strong class="font-semibold text-slate-700">${escapeHtml(maskedPhone)}</strong></span>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Huy hiệu Xếp hạng -->
+                        <div class="inline-flex items-center gap-3 px-4 py-3 rounded-2xl ${isTop3 ? 'bg-gradient-to-r from-amber-50 to-yellow-50 border-amber-200/90' : 'bg-slate-50 border-slate-200/80'} border self-start sm:self-center shrink-0">
+                            <div class="w-10 h-10 rounded-xl ${isTop3 ? 'bg-amber-100 text-amber-600' : 'bg-white text-indigo-600 border border-slate-200/70'} flex items-center justify-center shrink-0">
+                                <i data-lucide="${isTop3 ? 'crown' : 'award'}" class="w-5 h-5"></i>
+                            </div>
+                            <div>
+                                <span class="block text-[11px] font-bold uppercase tracking-wider text-slate-400">Thứ hạng lớp</span>
+                                <span class="block text-base sm:text-lg font-extrabold text-slate-900 leading-tight">
+                                    ${escapeHtml(parsedInfo.rankDisplay)}
+                                </span>
+                                ${parsedInfo.sameRankNote ? `
+                                    <span class="block text-[11px] text-slate-500 mt-0.5">${escapeHtml(parsedInfo.sameRankNote)}</span>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Phần 2: Điểm số Giữa Kì I & Nhận xét của Giáo viên -->
+                    <div class="p-5 sm:p-7 grid grid-cols-1 md:grid-cols-12 gap-5 items-stretch">
+                        
+                        <!-- Cột Điểm Giữa Kì I (5/12 cột trên desktop) -->
+                        <div class="md:col-span-5 bg-slate-50/90 rounded-2xl p-5 border border-slate-200/80 flex flex-col justify-between">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Điểm Giữa Kì I</span>
+                                <span class="text-xs font-semibold text-slate-400">Môn Toán</span>
+                            </div>
+                            
+                            <div class="my-2 flex items-baseline gap-1.5">
+                                <span class="text-5xl sm:text-6xl font-extrabold ${grade.scoreTextClass} tracking-tight leading-none">
+                                    ${formattedScore}
+                                </span>
+                                <span class="text-base font-bold text-slate-400">/ 10</span>
+                            </div>
+
+                            <!-- Thanh tiến trình trực quan -->
+                            <div class="mt-3 space-y-1.5">
+                                <div class="w-full h-2.5 bg-slate-200/80 rounded-full overflow-hidden">
+                                    <div class="h-full ${grade.barColorClass} rounded-full transition-all duration-700" style="width: ${grade.percent}%"></div>
+                                </div>
+                                <div class="flex justify-between text-[11px] font-medium text-slate-400">
+                                    <span>0</span>
+                                    <span>5.0</span>
+                                    <span>8.0</span>
+                                    <span>10</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cột Nhận xét của Giáo viên (7/12 cột trên desktop) -->
+                        <div class="md:col-span-7 bg-gradient-to-br from-indigo-50/60 to-blue-50/40 rounded-2xl p-5 border border-indigo-100/90 flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-center gap-2 text-indigo-950 font-bold text-sm mb-3">
+                                    <div class="w-7 h-7 rounded-lg bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0">
+                                        <i data-lucide="message-square-quote" class="w-4 h-4"></i>
+                                    </div>
+                                    <span>Nhận xét của Giáo viên</span>
+                                </div>
+                                <p class="text-slate-800 text-sm sm:text-base font-medium leading-relaxed bg-white/80 rounded-xl p-4 border border-indigo-100/70 shadow-2xs">
+                                    "${escapeHtml(parsedInfo.teacherComment)}"
+                                </p>
+                            </div>
+
+                            <div class="mt-4 pt-3 border-t border-indigo-100/70 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+                                <span class="inline-flex items-center gap-1 text-emerald-700 font-semibold">
+                                    <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+                                    <span>Đã xác nhận kết quả</span>
+                                </span>
+                                <span>Kỳ đánh giá: Giữa Học Kì I</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Phần 3: Thanh tiện ích lưu / sao chép phiếu điểm -->
+                    <div class="no-print px-5 sm:px-7 py-3.5 bg-slate-50/80 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+                        <span class="text-xs text-slate-500">Lưu trữ kết quả học tập của con:</span>
+                        <div class="flex items-center gap-2">
+                            <button 
+                                type="button" 
+                                onclick="copyStudentSummary('${encodedSummary}')"
+                                class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-indigo-50 hover:text-indigo-700 border border-slate-200 hover:border-indigo-200 transition-all shadow-2xs"
+                            >
+                                <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+                                <span>Sao chép tóm tắt</span>
+                            </button>
+                            <button 
+                                type="button" 
+                                onclick="window.print()"
+                                class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/80 transition-all"
+                            >
+                                <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+                                <span>In / Lưu phiếu điểm</span>
+                            </button>
+                        </div>
+                    </div>
+
+                </article>
+            `;
+        }
+
+        // =========================================================================
+        // 5. TIỆN ÍCH SAO CHÉP & THÔNG BÁO
+        // =========================================================================
+        function copyStudentSummary(encodedText) {
+            const text = decodeURIComponent(encodedText);
+            copyTextToClipboard(text, 'Đã sao chép tóm tắt phiếu điểm!');
+        }
+
+        function copyTextToClipboard(text, successMessage) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            textarea.setSelectionRange(0, 99999);
+            try {
+                document.execCommand('copy');
+                showToast(successMessage);
+            } catch (err) {
+                console.error('Lỗi sao chép:', err);
+            }
+            document.body.removeChild(textarea);
+        }
+
+        let toastTimer = null;
+        function showToast(message) {
+            const toast = document.getElementById('toastNotification');
+            const msgEl = document.getElementById('toastMessage');
+            if (!toast || !msgEl) return;
+
+            msgEl.textContent = message;
+            toast.classList.remove('hidden');
+            // Kích hoạt transition
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-4', 'opacity-0');
+            });
+
+            if (toastTimer) clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                toast.classList.add('translate-y-4', 'opacity-0');
+                setTimeout(() => {
+                    toast.classList.add('hidden');
+                }, 300);
+            }, 2800);
+        }
+
+        function getInitials(fullName) {
+            if (!fullName) return 'HS';
+            const parts = fullName.trim().split(/\s+/);
+            if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+            return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = String(text ?? '');
+            return div.innerHTML;
+        }
+
+        // =========================================================================
+        // 6. CÔNG CỤ QUẢN TRỊ DÀNH CHO GIÁO VIÊN (EXCEL -> HTML TĨNH)
+        // =========================================================================
+        function openTeacherModal() {
+            updateTeacherDataSummary();
+            document.getElementById('teacherModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeTeacherModal() {
+            document.getElementById('teacherModal').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        document.getElementById('teacherModal').addEventListener('click', (e) => {
+            if (e.target.id === 'teacherModal') {
+                closeTeacherModal();
+            }
+        });
+
+        // Nhập dữ liệu 6 cột dán trực tiếp từ Excel
+        function importFromExcelPaste() {
+            const rawText = document.getElementById('excelPasteArea').value.trim();
+            const feedbackEl = document.getElementById('importFeedback');
+
+            if (!rawText) {
+                feedbackEl.textContent = 'Vui lòng dán dữ liệu copy từ file Excel vào ô phía trên.';
+                feedbackEl.className = 'text-xs font-semibold text-rose-600';
+                return;
+            }
+
+            const lines = rawText.split(/\r?\n/);
+            const imported = [];
+
+            lines.forEach(line => {
+                if (!line.trim()) return;
+                let cols = line.includes('\t') ? line.split('\t') : line.split(/[,;]/);
+                cols = cols.map(c => c.trim().replace(/^["']|["']$/g, ''));
+
+                // Bỏ qua dòng tiêu đề nếu có
+                if (cols[0] && (cols[0].toLowerCase().includes('họ tên') || cols[0].toLowerCase().includes('họ và tên'))) {
+                    return;
+                }
+
+                // Hỗ trợ định dạng chuẩn 6 cột: Họ tên | Lớp | SĐT | Điểm | Xếp hạng | Nhận xét
+                if (cols.length >= 4) {
+                    const rawScore = String(cols[3] || '0').replace(',', '.');
+                    const scoreVal = parseFloat(rawScore);
+                    const rawRank = String(cols[4] || '').replace(/[^\d]/g, '');
+                    const rankVal = rawRank ? parseInt(rawRank, 10) : '';
+
+                    imported.push({
+                        name: cols[0] || 'Chưa rõ tên',
+                        className: cols[1] || '9A6',
+                        phone: normalizePhone(cols[2] || ''),
+                        score: isNaN(scoreVal) ? 0 : scoreVal,
+                        rank: rankVal,
+                        comment: cols[5] || ''
+                    });
+                }
+            });
+
+            if (imported.length === 0) {
+                feedbackEl.textContent = 'Không đọc được dữ liệu hợp lệ. Thầy kiểm tra đủ 6 cột từ Excel nhé!';
+                feedbackEl.className = 'text-xs font-semibold text-rose-600';
+                return;
+            }
+
+            STUDENTS_DATA = imported;
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(STUDENTS_DATA));
+            } catch (e) {
+                console.warn('Không thể lưu vào localStorage:', e);
+            }
+
+            renderActiveClassesBadges();
+            updateTeacherDataSummary();
+            feedbackEl.textContent = `Đã nạp thành công ${imported.length} học sinh!`;
+            feedbackEl.className = 'text-xs font-bold text-emerald-600';
+            showToast(`Đã cập nhật danh sách ${imported.length} học sinh!`);
+        }
+
+        // Khôi phục về danh sách gốc 141 học sinh
+        function resetToDefaultData() {
+            STUDENTS_DATA = [...DEFAULT_STUDENTS_DATA];
+            try {
+                localStorage.removeItem(STORAGE_KEY);
+            } catch (e) {}
+
+            renderActiveClassesBadges();
+            updateTeacherDataSummary();
+            document.getElementById('excelPasteArea').value = '';
+            const feedbackEl = document.getElementById('importFeedback');
+            feedbackEl.textContent = 'Đã khôi phục dữ liệu gốc 141 học sinh (9A6, 9A2, 7A2).';
+            feedbackEl.className = 'text-xs font-semibold text-indigo-600';
+            showToast('Đã khôi phục dữ liệu gốc 141 học sinh!');
+        }
+
+        // Tạo chuỗi mã nguồn HTML hoàn chỉnh đã nhúng sẵn dữ liệu hiện tại
+        function buildUpdatedHtmlSource() {
+            const currentHtml = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+            const serializedData = JSON.stringify(STUDENTS_DATA, null, 12);
+            // Thay thế khối DEFAULT_STUDENTS_DATA bằng dữ liệu mới nhất
+            const updatedHtml = currentHtml.replace(
+                /const DEFAULT_STUDENTS_DATA = \[[\s\S]*?\];/,
+                `const DEFAULT_STUDENTS_DATA = ${serializedData};`
+            );
+            return updatedHtml;
+        }
+
+        // Tải về file HTML độc lập mới
+        function downloadStandaloneHtml() {
+            const htmlContent = buildUpdatedHtmlSource();
+            const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'Tra_Cuu_Diem_Toan_GK1.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            showToast('Đang tải file Tra_Cuu_Diem_Toan_GK1.html...');
+        }
+
+        // Sao chép toàn bộ mã HTML hoàn chỉnh vào clipboard
+        function copyFullHtmlCode() {
+            const htmlContent = buildUpdatedHtmlSource();
+            copyTextToClipboard(htmlContent, 'Đã sao chép toàn bộ mã HTML hoàn chỉnh!');
+        }
+
+        // Khởi chạy ứng dụng khi tải xong DOM
+        document.addEventListener('DOMContentLoaded', initApp);
+    </script>
+</body>
+</html>
